@@ -13,25 +13,26 @@ Next steps are:
 import calendar
 import urllib.request as urlrq
 
-DEST_PATH="/tmp/comics/"
+ROOT_PATH="/home/juan/Documents/comics/"
 SITE_PATH="http://www.gocomics.com/"
 comics_base=[("bignate","bignate"),("pearlsbeforeswine","pearls")]
 comic_url_name=comics_base[0][0]
 comic_name=comics_base[0][1]
+DEST_PATH=ROOT_PATH+comic_name+'/'
 
 #Creates the comic url in iterative way
 if __name__ == "__main__":
 
     mycal=calendar.Calendar()
-    for year in range(2014,2017):
-        for month in range (1,13):
-            if year==2014 and month<4:
-                continue
+    for year in range(2017,2018):
+        for month in range (1,2):
+            #if year==2014 and month<4:
+            #    continue
             days=mycal.itermonthdays(year,month)
             for d in days:
                 if d>0:
                     url_comic=SITE_PATH+comic_url_name+"/{0}/{1:02d}/{2:02d}".format(year,month,d)
-                    print (url_comic)
+             #       print (url_comic)
 
                     html_comic=urlrq.urlopen(url_comic)
                     html_comic_str=str(html_comic.read())
