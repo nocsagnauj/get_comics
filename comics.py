@@ -42,7 +42,7 @@ if __name__ == "__main__":
     #SITE_PATH = comics_params.get('DEFAULT','SITE_PATH')
     COMICS_LIST=comics_params.get('DEFAULT','COMICS').split(',')
     
-    print (COMICS_LIST)
+    #print (COMICS_LIST)
     
     mycal=calendar.Calendar()
     
@@ -64,8 +64,8 @@ if __name__ == "__main__":
             for month in range (1,2):
                 #if year==2014 and month<4:
                 #    continue
-                #days=mycal.itermonthdays(year,month)
-                for d in range(1,5):
+                days=mycal.itermonthdays(year,month)
+                for d in days:
                     if d>0:
                         url_comic=comic_url_name+"/{0}/{1:02d}/{2:02d}".format(year,month,d)
                         #print (url_comic)
