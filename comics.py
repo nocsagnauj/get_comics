@@ -55,8 +55,8 @@ if __name__ == "__main__":
         comic_name=current_comic.lower()
         
         dest_path=DEST_ROOT_PATH+comic_name+'/'
-        try: 
-            os.mkdir(dest_path)
+        try:
+            os.makedirs(dest_path)
         except OSError:
             print ("Directory {0} already exists. Kudos for preparing the field.".format(dest_path))
 
