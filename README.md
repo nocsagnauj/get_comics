@@ -18,7 +18,6 @@ COMIC\_URL\_NAME = ${DEFAULT:SITE\_PATH}/internet\_comic\_name/
 
 I have not (yet) coded the exception raise when the category is not found
 
-
 ## docker/Dockerfile
 ----
 There is a Dockerfile to dockerize the application
