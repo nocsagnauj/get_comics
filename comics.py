@@ -23,6 +23,7 @@ import os
 import calendar
 import urllib.request as urlrq
 import argparse
+from datetime import datetime, timedelta
 from configparser import ConfigParser
 from configparser import ExtendedInterpolation
 from configparser import NoSectionError, NoOptionError
@@ -68,7 +69,7 @@ def get_parameter_from_sources(section_name, key_name, config_file):
         params.read(config_file)
         try:
             param_value = params.get(section_name.upper(), key_name)
-        except:
+        except (NoSectionError, NoOptionError):
             print('\n////////////////////////////////')
             print("Unable to get the comic URL for comic: {}".format(section_name))
             print("Please set it as an environnement value or")
@@ -82,12 +83,26 @@ if __name__ == "__main__":
     comics_params = ConfigParser(interpolation=ExtendedInterpolation())
     comics_params.read(parse_args().config_file)
 
-    dest_root_path = get_parameter_from_sources('DEFAULT', 'DEST_ROOT_PATH', parse_args().config_file)
+    dest_root_path = get_parameter_from_sources('DEFAULT', 'DEST_ROOT_PATH',
+                                                parse_args().config_file)
     #dest_root_path = comics_params.get('DEFAULT', 'DEST_ROOT_PATH')
     if dest_root_path[-1] != '/':
         dest_root_path += '/'
     #SITE_PATH = comics_params.get('DEFAULT','SITE_PATH')
-    comics_list = comics_params.get('DEFAULT', 'COMICS').split(',')
+    comics_list = str(comics_params.get('DEFAULT', 'COMICS')).split(',')
+
+    try:
+        start_date_str = get_parameter_from_sources('DATES', 'START_DATE', parse_args().config_file)
+        start_date = datetime.strptime(start_date_str, "%Y/%m/%d")
+    except (NoSectionError, NoOptionError):
+        start_date = datetime.today()
+    try:
+        end_date_str = get_parameter_from_sources('DATES', 'END_DATE', parse_args().config_file)
+        end_date = datetime.strptime(end_date_str, "%Y/%m/%d")
+        if end_date > datetime.today():
+            end_date = datetime.today()
+    except (NoSectionError, NoOptionError):
+        end_date = datetime.today()
 
     #print("Comics list: ", comics_list)
 
@@ -116,43 +131,46 @@ if __name__ == "__main__":
             continue
             #comic_url_name = CODE_DEFAULT_SITE_PATH + current_comic.lower()
 
-        if comic_url_name[-1] == '/':
-            comic_url_name = comic_url_name[:-1]
-        comic_name = current_comic.lower()
+        if comic_url_name[-1] != '/':
+            comic_url_name = comic_url_name + "/"
 
+        comic_name = current_comic.lower()
         dest_path = dest_root_path+comic_name+'/'
         try:
             os.makedirs(dest_path)
         except OSError:
             print("Directory {0} already exists. Kudos for preparing the field.".format(dest_path))
 
-        for year in range(2017, 2018):
-            for month in range(1, 2):
-                #if year==2014 and month<4:
-                #    continue
-                days = mycal.itermonthdays(year, month)
-                for d in days:
-                    if d > 0:
-                        url_comic = comic_url_name + "/{0}/{1:02d}/{2:02d}".format(year, month, d)
-                        #print (url_comic)
+        current_date = start_date
+        while current_date <= end_date:
+            url_comic = comic_url_name + datetime.strftime(current_date, "%Y/%m/%d")
 
-                        html_comic = urlrq.urlopen(url_comic)
-                        html_comic_str = str(html_comic.read())
-                        point_line = html_comic_str.find('data-image=')
-                        start_url_img = html_comic_str.find("\"", point_line)+1
-                        end_url_img = html_comic_str.find("\"", start_url_img)
-                        url_img = html_comic_str[start_url_img:end_url_img]
-                        #print (url_img)
+            # Get the whole html page in gocomics.com for this comic
+            # and find the url for the comic image
+            # Put it in "url_img"
+            html_comic = urlrq.urlopen(url_comic)
+            html_comic_str = str(html_comic.read())
+            point_line = html_comic_str.find('data-image=')
+            start_url_img = html_comic_str.find("\"", point_line)+1
+            end_url_img = html_comic_str.find("\"", start_url_img)
+            url_img = html_comic_str[start_url_img:end_url_img]
+            #print (url_img)
 
-                        html_img = urlrq.urlopen(url_img)
-                        header_html_img = html_img.getheader('Content-Disposition')
-                        point_filename = header_html_img.find('filename=')
-                        start_filename = header_html_img.find("\"", point_filename)+1
-                        end_filename = header_html_img.find("\"", start_filename)
-                        full_filename = header_html_img[start_filename:end_filename]
+            # Get the filename of the image from the url_img
+            html_img = urlrq.urlopen(url_img)
+            header_html_img = html_img.getheader('Content-Disposition')
+            point_filename = header_html_img.find('filename=')
+            start_filename = header_html_img.find("\"", point_filename)+1
+            end_filename = header_html_img.find("\"", start_filename)
+            full_filename = header_html_img[start_filename:end_filename]
 
-                        #rename the comic with comic name instead of 'bn' or 'pb'
-                        filename = comic_name+'20'+full_filename[2:]
-                        print(filename)
+            #rename the comic with comic name instead of 'bn' or 'pb'
+            filename = comic_name+'20'+full_filename[2:]
+            print(filename)
 
-                        urlrq.urlretrieve(url_img, dest_path+filename)
+            # Save the comic in the defined path
+            urlrq.urlretrieve(url_img, dest_path+filename)
+
+            # Move on to the next day until the end_date
+            current_date += timedelta(days=1)
+
