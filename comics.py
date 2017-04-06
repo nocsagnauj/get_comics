@@ -16,7 +16,6 @@ DEFAULT_SITE_PATH
 DEFAULT_COMICS
 COMIC-NAME_COMIC_URL_NAME
 (i.e. BIGNATE_COMIC_URL_NAME)
-
 """
 
 import os
@@ -58,10 +57,11 @@ def get_parameter_from_sources(section_name, key_name, config_file):
     the environnement values or from 'config_file'
     """
     parameter_full_name = section_name + '_' + key_name
+    print("*"*50)
     print("Let's try to find the parameter: {}".format(parameter_full_name))
     try:
         param_value = os.environ[parameter_full_name]
-        print("Param_value from os is: {}".format(param_value))
+        print("Param_value from OS is: {}".format(param_value))
     except KeyError: #Value not found in environnement values
         print("{} parameter is not in environnement values".format(parameter_full_name))
         #section_name,separator,key_name = parameter.partition('_')
@@ -69,28 +69,27 @@ def get_parameter_from_sources(section_name, key_name, config_file):
         params.read(config_file)
         try:
             param_value = params.get(section_name.upper(), key_name)
+            print("Got {} from config file. Value: {}".format(parameter_full_name, param_value))
         except (NoSectionError, NoOptionError):
-            print('\n////////////////////////////////')
-            print("Unable to get the comic URL for comic: {}".format(section_name))
+            print('\n' + '/'*50)
+            print("Unable to get the {1} parameter for comic: {0}".format(section_name, key_name))
             print("Please set it as an environnement value or")
-            print("as a key in its section of the config file.")
-            print('////////////////////////////////\n')
+            print("as a key in its section {0} of the config file.".format(section_name))
+            print('/'*50 + '\n')
             raise
+    print("*"*50)
     return param_value
 
 #Creates the comic url in iterative way
 if __name__ == "__main__":
-    comics_params = ConfigParser(interpolation=ExtendedInterpolation())
-    comics_params.read(parse_args().config_file)
-
     dest_root_path = get_parameter_from_sources('DEFAULT', 'DEST_ROOT_PATH',
                                                 parse_args().config_file)
-    #dest_root_path = comics_params.get('DEFAULT', 'DEST_ROOT_PATH')
+
     if dest_root_path[-1] != '/':
         dest_root_path += '/'
-    #SITE_PATH = comics_params.get('DEFAULT','SITE_PATH')
-    comics_list = str(comics_params.get('DEFAULT', 'COMICS')).split(',')
 
+    comics_list = str(get_parameter_from_sources('DEFAULT', 'COMICS',
+                                                 parse_args().config_file)).split(',')
     try:
         start_date_str = get_parameter_from_sources('DATES', 'START_DATE', parse_args().config_file)
         start_date = datetime.strptime(start_date_str, "%Y/%m/%d")
@@ -104,13 +103,10 @@ if __name__ == "__main__":
     except (NoSectionError, NoOptionError):
         end_date = datetime.today()
 
-    #print("Comics list: ", comics_list)
-
     mycal = calendar.Calendar()
 
     for current_comic in comics_list:
         current_comic = current_comic.strip()
-        #comic_url_name = comics_params.get(current_comic.upper(),'COMIC_URL_NAME')
         try:
             comic_url_name = get_parameter_from_sources(current_comic.upper(),
                                                         'COMIC_URL_NAME',
@@ -129,7 +125,6 @@ if __name__ == "__main__":
             print('/'*40+'\n')
             #there was an exception, continue to next comic in comics_list
             continue
-            #comic_url_name = CODE_DEFAULT_SITE_PATH + current_comic.lower()
 
         if comic_url_name[-1] != '/':
             comic_url_name = comic_url_name + "/"
@@ -139,7 +134,9 @@ if __name__ == "__main__":
         try:
             os.makedirs(dest_path)
         except OSError:
+            print("*"*50)
             print("Directory {0} already exists. Kudos for preparing the field.".format(dest_path))
+            print("*"*50)
 
         current_date = start_date
         while current_date <= end_date:
@@ -154,7 +151,6 @@ if __name__ == "__main__":
             start_url_img = html_comic_str.find("\"", point_line)+1
             end_url_img = html_comic_str.find("\"", start_url_img)
             url_img = html_comic_str[start_url_img:end_url_img]
-            #print (url_img)
 
             # Get the filename of the image from the url_img
             html_img = urlrq.urlopen(url_img)
@@ -166,11 +162,10 @@ if __name__ == "__main__":
 
             #rename the comic with comic name instead of 'bn' or 'pb'
             filename = comic_name+'20'+full_filename[2:]
-            print(filename)
+            print("Getting {}".format(filename))
 
             # Save the comic in the defined path
             urlrq.urlretrieve(url_img, dest_path+filename)
 
             # Move on to the next day until the end_date
             current_date += timedelta(days=1)
-
