@@ -4,8 +4,8 @@ ENV DEST_ROOT_PATH /tmp/comics_strips/
 ENV CLONE_PATH /comics_app
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apk update && apk add git
-RUN git clone -b develop https://github.com/nocsagnauj/get_comics.git "$CLONE_PATH" &&\
+RUN apk update && apk add git &&\
+    git clone https://github.com/nocsagnauj/get_comics.git "$CLONE_PATH" &&\
     pip install -r $CLONE_PATH/requirements.txt &&\
     mkdir -p $DEST_ROOT_PATH
 
